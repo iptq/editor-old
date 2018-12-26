@@ -3,6 +3,9 @@ package editor
 import (
 	"fmt"
 	"image/color"
+	"io/ioutil"
+
+	"editor/osu"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -21,6 +24,7 @@ type Editor struct {
 	// current audio timestamp in milliseconds
 	timestamp float64
 	playing   bool
+	beatmap   *osu.Beatmap
 
 	atlas  *text.Atlas
 	window *pixelgl.Window
@@ -59,8 +63,25 @@ func (editor *Editor) update() {
 func (editor *Editor) draw() {
 	// draw audio timestamp
 	timestamp := text.New(pixel.V(100, 500), editor.atlas)
-	fmt.Fprintf(timestamp, "%d", editor.timestamp)
+	fmt.Fprintf(timestamp, "%f", editor.timestamp)
 	timestamp.Draw(editor.window, pixel.IM)
+}
+
+func (editor *Editor) Open(filename string) error {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	// convert to utf-8
+	contents := string(data)
+	beatmap, err := osu.DeserializeBeatmap(contents)
+	if err != nil {
+		return err
+	}
+
+	editor.beatmap = beatmap
+	return nil
 }
 
 // Start runs the editor
