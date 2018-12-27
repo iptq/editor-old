@@ -16,6 +16,12 @@ const (
 	MODE_MANIA = 3
 )
 
+var (
+	FILE_FORMAT_PATTERN = regexp.MustCompile("^osu file format v(\\d+)$")
+	SECTION_PATTERN     = regexp.MustCompile("^\\[([[:alpha:]]+)\\]$")
+	KEY_VALUE_PATTERN   = regexp.MustCompile("^([A-Za-z]+)\\s*:\\s*(.*)$")
+)
+
 type Beatmap struct {
 	Version int
 
@@ -51,12 +57,6 @@ type Beatmap struct {
 	// TODO: events
 }
 
-var (
-	FILE_FORMAT_PATTERN = regexp.MustCompile("^osu file format v(\\d+)$")
-	SECTION_PATTERN     = regexp.MustCompile("^\\[([[:alpha:]]+)\\]$")
-	KEY_VALUE_PATTERN   = regexp.MustCompile("^([A-Za-z]+)\\s*:\\s*(.*)$")
-)
-
 func ParseBeatmap(contents string) (*Beatmap, error) {
 	// Largely based on https://github.com/natsukagami/go-osu-parser/blob/master/parser.go
 	// TODO: read in a stream
@@ -64,6 +64,11 @@ func ParseBeatmap(contents string) (*Beatmap, error) {
 
 	m := &Beatmap{}
 	lines := strings.Split(contents, "\n")
+
+	// compatibility for older versions
+	approachSet := false
+	artistUnicodeSet := false
+	titleUnicodeSet := false
 
 	for _, line := range lines {
 		line = strings.Trim(line, " \r\n")
@@ -100,6 +105,33 @@ func ParseBeatmap(contents string) (*Beatmap, error) {
 				switch strings.ToLower(key) {
 				case "audiofilename":
 					m.AudioFilename = value
+				case "audioleadin":
+					if val, err := strconv.Atoi(value); err == nil {
+						m.AudioLeadIn = val
+					}
+				case "previewtime":
+					if val, err := strconv.Atoi(value); err == nil {
+						m.PreviewTime = val
+					}
+				case "countdown":
+					if val, err := strconv.Atoi(value); err == nil {
+						m.Countdown = val > 0
+					}
+				case "sampleset":
+					var val int
+					switch strings.ToLower(value) {
+					case "normal":
+						val = SAMPLE_NORMAL
+					case "soft":
+						val = SAMPLE_SOFT
+					case "drum":
+						val = SAMPLE_DRUM
+					default:
+						return nil, fmt.Errorf("unknown sample set '%s'", value)
+					}
+					m.SampleSet = val
+				default:
+					// return nil, fmt.Errorf("unknown key '%s'", key)
 				}
 			} else {
 				return nil, fmt.Errorf("failed to match: '%+v'", line)
@@ -115,6 +147,18 @@ func ParseBeatmap(contents string) (*Beatmap, error) {
 		default:
 			return nil, fmt.Errorf("unknown section '%s'", section)
 		}
+	}
+
+	// compatibility for older versions
+	if !approachSet {
+		// AR used to be set by OD
+		m.ApproachRate = m.OverallDifficulty
+	}
+	if !artistUnicodeSet {
+		m.ArtistUnicode = m.Artist
+	}
+	if !titleUnicodeSet {
+		m.TitleUnicode = m.Title
 	}
 
 	return nil, fmt.Errorf("%#v", m)

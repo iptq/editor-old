@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 
 	"editor/osu"
+	"editor/ui"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -28,7 +29,7 @@ type Editor struct {
 	beatmap   *osu.Beatmap
 
 	atlas  *text.Atlas
-	window *pixelgl.Window
+	window *ui.Window
 }
 
 func NewEditor() (*Editor, error) {
@@ -41,7 +42,7 @@ func NewEditor() (*Editor, error) {
 		Bounds: pixel.R(0, 0, 1366, 768),
 		VSync:  true,
 	}
-	window, err := pixelgl.NewWindow(wincfg)
+	window, err := ui.NewWindow(wincfg)
 	if err != nil {
 		return nil, err
 	}
