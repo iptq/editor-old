@@ -1,6 +1,7 @@
 package osu
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,20 +11,29 @@ import (
 	"testing"
 )
 
-func testDeserializing(filename string) func(*testing.T) {
+func testSingle(filename string) func(*testing.T) {
 	return func(t *testing.T) {
 		f, err := os.Open("./test/" + filename)
 		if err != nil {
 			t.Errorf("failed to locate file '%s'", filename)
 		}
-		_, err = ParseBeatmap(f)
+
+		beatmap, err := ParseBeatmap(f)
 		if err != nil {
 			t.Errorf("failed to parse file: %+v", err)
 		}
+
+		var buf bytes.Buffer
+		err = beatmap.Serialize(&buf)
+		if err != nil {
+			t.Errorf("failed to serialize: %+v", err)
+		}
+
+		t.Errorf("unserialized: %+v", buf.String())
 	}
 }
 
-func TestParsing(t *testing.T) {
+func TestSerialization(t *testing.T) {
 	files, err := ioutil.ReadDir("./test")
 	if err != nil {
 		log.Fatal(err)
@@ -39,10 +49,10 @@ func TestParsing(t *testing.T) {
 		if !strings.HasSuffix(file.Name(), ".osu") {
 			continue
 		}
-		if i > 2 && testing.Short() {
+		if i > 5 && testing.Short() {
 			break
 		}
 
-		t.Run(fmt.Sprintf("test%d", i), testDeserializing(file.Name()))
+		t.Run(fmt.Sprintf("test%d", i), testSingle(file.Name()))
 	}
 }

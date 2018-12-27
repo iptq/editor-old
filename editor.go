@@ -3,7 +3,7 @@ package editor
 import (
 	"fmt"
 	"image/color"
-	"io/ioutil"
+	"os"
 
 	"editor/osu"
 	"editor/ui"
@@ -87,14 +87,13 @@ func (editor *Editor) draw() {
 }
 
 func (editor *Editor) Open(filename string) error {
-	data, err := ioutil.ReadFile(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
 
 	// convert to utf-8
-	contents := string(data)
-	beatmap, err := osu.ParseBeatmap(contents)
+	beatmap, err := osu.ParseBeatmap(f)
 	if err != nil {
 		return err
 	}
