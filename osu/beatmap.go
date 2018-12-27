@@ -214,7 +214,7 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 			if obj, err := ParseHitObject(line); err == nil {
 				m.HitObjects = append(m.HitObjects, &obj)
 			} else {
-				return nil, fmt.Errorf("invalid hitobject line: '%+v'", line)
+				return nil, fmt.Errorf("invalid hitobject: %s (line: '%s')", err, line)
 			}
 		default:
 			return nil, fmt.Errorf("unknown section '%s'", section)

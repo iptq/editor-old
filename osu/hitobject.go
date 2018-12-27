@@ -21,14 +21,21 @@ type HitObject interface {
 }
 
 type ObjCircle struct {
-	ulid ulid.ULID
-
-	startTime int
+	ulid      ulid.ULID
+	x, y      int
+	startTime Timestamp
+	newCombo  bool
+	hitsound  Hitsound
 }
 
-func ParseHitCircle(params parseParameters, parts []string) (ObjCircle, error) {
+func ParseHitCircle(params commonParameters, parts []string) (ObjCircle, error) {
 	obj := ObjCircle{
-		ulid: NewULID(),
+		ulid:      NewULID(),
+		x:         params.X,
+		y:         params.Y,
+		startTime: TimestampAbsolute(params.StartTime),
+		newCombo:  params.NewCombo,
+		hitsound:  Hitsound(params.Hitsound),
 	}
 	return obj, nil
 }
@@ -38,12 +45,18 @@ func (obj ObjCircle) GetULID() ulid.ULID {
 }
 
 func (obj ObjCircle) GetStartTime() Timestamp {
-	return TimestampAbsolute(obj.startTime)
+	return obj.startTime
 }
 
 func (obj ObjCircle) Serialize() (string, error) {
-	// TODO:
-	return "", nil
+	return fmt.Sprintf("%d,%d,%d,%d,%d,%s",
+		obj.x,
+		obj.y,
+		obj.startTime,
+		1|(WHAT_THE_FUCK[obj.newCombo]<<2),
+		0,
+		"0:0:0:0:",
+	), nil
 }
 
 type ObjSlider struct {
@@ -52,7 +65,7 @@ type ObjSlider struct {
 	startTime int
 }
 
-func ParseSlider(params parseParameters, parts []string) (ObjSlider, error) {
+func ParseSlider(params commonParameters, parts []string) (ObjSlider, error) {
 	obj := ObjSlider{
 		ulid: NewULID(),
 	}
@@ -78,7 +91,7 @@ type ObjSpinner struct {
 	startTime int
 }
 
-func ParseSpinner(params parseParameters, parts []string) (ObjSpinner, error) {
+func ParseSpinner(params commonParameters, parts []string) (ObjSpinner, error) {
 	obj := ObjSpinner{
 		ulid: NewULID(),
 	}
@@ -98,14 +111,15 @@ func (obj ObjSpinner) Serialize() (string, error) {
 	return "", errors.New("unimplemented")
 }
 
-type parseParameters struct {
-	x, y      int
-	startTime int
-	newCombo  bool
+type commonParameters struct {
+	X, Y      int
+	StartTime int
+	NewCombo  bool
+	Hitsound  int
 }
 
 func ParseHitObject(line string) (HitObject, error) {
-	parts := strings.Split(line, ":")
+	parts := strings.Split(line, ",")
 
 	x, err := strconv.Atoi(parts[0])
 	if err != nil {
@@ -127,8 +141,13 @@ func ParseHitObject(line string) (HitObject, error) {
 		return nil, err
 	}
 
+	hitsound, err := strconv.Atoi(parts[3])
+	if err != nil {
+		return nil, err
+	}
+
 	newCombo := (ty & 4) > 0
-	params := parseParameters{x, y, startTime, newCombo}
+	params := commonParameters{x, y, startTime, newCombo, hitsound}
 
 	switch {
 	case (ty & 1) > 0:
