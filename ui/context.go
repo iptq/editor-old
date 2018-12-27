@@ -5,6 +5,17 @@ import (
 )
 
 type Context struct {
-	*Window
-	G *imdraw.IMDraw
+	window *Window
+	*imdraw.IMDraw
+}
+
+func ContextFrom(window *Window) *Context {
+	return &Context{
+		IMDraw: imdraw.New(nil),
+		window: window,
+	}
+}
+
+func (ctx *Context) Finish() {
+	ctx.IMDraw.Draw(ctx.window)
 }

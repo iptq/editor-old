@@ -26,7 +26,7 @@ type Editor struct {
 	beatmap    *EditorBeatmap
 	lastUpdate time.Time
 
-	seeker *ui.Seeker
+	seeker *Seeker
 
 	atlas  *text.Atlas
 	window *ui.Window
@@ -55,7 +55,21 @@ func NewEditor() (*Editor, error) {
 		atlas:  atlas,
 		window: window,
 	}
+
+	seekerConfig := SeekerConfig{
+		Editor: editor,
+	}
+	editor.seeker = NewSeeker(seekerConfig)
+
 	return editor, nil
+}
+
+func (editor *Editor) GetCurrentTime() int {
+	return editor.timestamp
+}
+
+func (editor *Editor) GetSongLength() int {
+	return editor.audio.GetSongLength()
 }
 
 func (editor *Editor) update() {
@@ -86,26 +100,10 @@ func (editor *Editor) draw() {
 	length := editor.audio.GetSongLength()
 	percent := float64(editor.timestamp) * 100.0 / float64(length)
 
+	ctx := ui.ContextFrom(editor.window)
 	im := imdraw.New(nil)
 
-	// draw seeker at the bottom
-	im.Color = pixel.RGB(0.2, 0.2, 0.2)
-	im.Push(pixel.V(0, 0))
-	im.Push(pixel.V(1366, 48))
-	im.Rectangle(0)
-
-	// seeker line
-	im.Color = pixel.RGB(0.9, 0.9, 0.9)
-	im.Push(pixel.V(180, 23))
-	im.Push(pixel.V(180+1000, 25))
-	im.Rectangle(0)
-
-	// seeker handle
-	im.Color = pixel.RGB(1.0, 1.0, 1.0)
-	x := percent * 10
-	im.Push(pixel.V(178+x, 12))
-	im.Push(pixel.V(182+x, 36))
-	im.Rectangle(0)
+	editor.seeker.Draw(ctx)
 
 	// playfield
 	im.Color = pixel.RGB(0.1, 0.1, 0.1)
@@ -126,6 +124,7 @@ func (editor *Editor) draw() {
 	im.Rectangle(0)
 
 	im.Draw(editor.window)
+	ctx.Finish()
 
 	// draw audio timestamp
 	formatted := FormatTimestamp(editor.timestamp)

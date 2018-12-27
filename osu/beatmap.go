@@ -211,7 +211,11 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 		case "colours":
 			// TODO
 		case "hitobjects":
-			// TODO
+			if obj, err := ParseHitObject(line); err == nil {
+				m.HitObjects = append(m.HitObjects, &obj)
+			} else {
+				// return nil, fmt.Errorf("invalid hitobject line: '%+v'", line)
+			}
 		default:
 			return nil, fmt.Errorf("unknown section '%s'", section)
 		}

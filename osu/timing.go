@@ -17,12 +17,10 @@ type Timestamp interface {
 	Milliseconds() int
 }
 
-type TimestampAbsolute struct {
-	inner int
-}
+type TimestampAbsolute int
 
-func (t *TimestampAbsolute) Milliseconds() int {
-	return t.inner
+func (t TimestampAbsolute) Milliseconds() int {
+	return int(t)
 }
 
 type snapping struct {
@@ -46,15 +44,16 @@ func (s snappings) Less(i, j int) bool {
 }
 
 // IntoRelative attempts to convert an absolute timestamp into a relative one
-func (t *TimestampAbsolute) IntoRelative(to *TimingPoint) (*TimestampRelative, error) {
+func (t TimestampAbsolute) IntoRelative(to *TimingPoint) (*TimestampRelative, error) {
 	bpm := (*to).GetBPM()
 	meter := (*to).GetMeter()
 
 	msPerBeat := 60000.0 / bpm
 	msPerMeasure := msPerBeat * float64(meter)
 
-	base := t.inner
-	cur := t.inner
+	// TODO:
+	base := t
+	cur := t
 
 	measures := int(float64(cur-base) / msPerMeasure)
 	measureStart := float64(base) + float64(measures)*msPerMeasure
@@ -101,7 +100,7 @@ type TimestampRelative struct {
 	denom    int
 }
 
-func (t *TimestampRelative) Milliseconds() int {
+func (t TimestampRelative) Milliseconds() int {
 	base := (*t.previous).GetTimestamp().Milliseconds()
 	bpm := (*t.previous).GetBPM()
 
