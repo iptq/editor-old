@@ -26,7 +26,7 @@ type Editor struct {
 	// current audio timestamp in milliseconds
 	timestamp int
 	playing   bool
-	beatmap   *osu.Beatmap
+	beatmap   *EditorBeatmap
 
 	atlas  *text.Atlas
 	window *ui.Window
@@ -99,7 +99,7 @@ func (editor *Editor) Open(filename string) error {
 		return err
 	}
 
-	editor.beatmap = beatmap
+	editor.beatmap = EditorBeatmapFrom(beatmap)
 	return nil
 }
 

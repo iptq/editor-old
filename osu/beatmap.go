@@ -1,6 +1,7 @@
 package osu
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -51,8 +52,8 @@ type Beatmap struct {
 	SliderTickRate    int
 
 	Colors       []Color
-	TimingPoints []TimingPoint
-	HitObjects   []HitObject
+	TimingPoints []*TimingPoint
+	HitObjects   []*HitObject
 
 	// TODO: events
 }
@@ -104,6 +105,11 @@ func ParseBeatmap(contents string) (*Beatmap, error) {
 				key, value := match[1], match[2]
 				switch strings.ToLower(key) {
 				case "audiofilename":
+					// check that its extension is mp3
+					if !strings.HasSuffix(strings.ToLower(value), ".mp3") {
+						return nil, errors.New("AudioFilename does not have the .mp3 extension")
+					}
+
 					m.AudioFilename = value
 				case "audioleadin":
 					if val, err := strconv.Atoi(value); err == nil {

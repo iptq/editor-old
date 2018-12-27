@@ -5,7 +5,16 @@ import "editor/osu"
 // EditorBeatmap is a wrapper around the traditional beatmap struct giving it
 // more features and functions
 type EditorBeatmap struct {
-	inner *osu.Beatmap
+	inner   *osu.Beatmap
+	objects *HitObjects
+}
+
+func EditorBeatmapFrom(b *osu.Beatmap) *EditorBeatmap {
+	objects := HitObjectsFrom(b.HitObjects)
+	return &EditorBeatmap{
+		inner:   b,
+		objects: objects,
+	}
 }
 
 // GetVisibleObjects returns all objects that can be seen at a particular
