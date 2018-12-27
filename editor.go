@@ -8,6 +8,7 @@ import (
 	"editor/osu"
 
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/font/basicfont"
@@ -22,7 +23,7 @@ const (
 // Editor contains the state of the editor.
 type Editor struct {
 	// current audio timestamp in milliseconds
-	timestamp float64
+	timestamp int
 	playing   bool
 	beatmap   *osu.Beatmap
 
@@ -57,13 +58,30 @@ func NewEditor() (*Editor, error) {
 
 func (editor *Editor) update() {
 	// update audio position based on scroll
-	editor.timestamp += editor.window.MouseScroll().Y * SCROLL_CONSTANT
+	editor.timestamp += int(editor.window.MouseScroll().Y * SCROLL_CONSTANT)
+	if editor.timestamp < 0 {
+		editor.timestamp = 0
+	}
 }
 
 func (editor *Editor) draw() {
+	im := imdraw.New(nil)
+
+	// draw timeline at the bottom
+	// (1366 x 34) @ (0, 0)
+	im.Color = pixel.RGB(0.2, 0.2, 0.2)
+	im.Push(pixel.V(0, 0))
+	im.Push(pixel.V(1366, 48))
+	im.Rectangle(0)
+
+	// playfield
+	// (1056 x 594) @ (310, 30)
+
+	im.Draw(editor.window)
+
 	// draw audio timestamp
-	timestamp := text.New(pixel.V(100, 500), editor.atlas)
-	fmt.Fprintf(timestamp, "%f", editor.timestamp)
+	timestamp := text.New(pixel.V(20, 20), editor.atlas)
+	fmt.Fprintf(timestamp, "%s", FormatTimestamp(editor.timestamp))
 	timestamp.Draw(editor.window, pixel.IM)
 }
 
@@ -75,7 +93,7 @@ func (editor *Editor) Open(filename string) error {
 
 	// convert to utf-8
 	contents := string(data)
-	beatmap, err := osu.DeserializeBeatmap(contents)
+	beatmap, err := osu.ParseBeatmap(contents)
 	if err != nil {
 		return err
 	}
