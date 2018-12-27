@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"os"
+	"path/filepath"
 
 	"editor/osu"
 	"editor/ui"
@@ -26,6 +27,7 @@ type Editor struct {
 	// current audio timestamp in milliseconds
 	timestamp int
 	playing   bool
+	audio     *AudioManager
 	beatmap   *EditorBeatmap
 
 	atlas  *text.Atlas
@@ -50,6 +52,7 @@ func NewEditor() (*Editor, error) {
 	editor := &Editor{
 		timestamp: 0.0,
 		playing:   false,
+		audio:     &AudioManager{},
 
 		atlas:  atlas,
 		window: window,
@@ -66,6 +69,10 @@ func (editor *Editor) update() {
 }
 
 func (editor *Editor) draw() {
+	if editor.beatmap == nil {
+		return
+	}
+
 	im := imdraw.New(nil)
 
 	// draw timeline at the bottom
@@ -82,11 +89,14 @@ func (editor *Editor) draw() {
 
 	// draw audio timestamp
 	timestamp := text.New(pixel.V(20, 20), editor.atlas)
-	fmt.Fprintf(timestamp, "%s", FormatTimestamp(editor.timestamp))
+	length := editor.audio.GetSongLength()
+	fmt.Fprintf(timestamp, "%s (%.02f%%)", FormatTimestamp(editor.timestamp), float64(editor.timestamp)*100.0/float64(length))
 	timestamp.Draw(editor.window, pixel.IM)
 }
 
 func (editor *Editor) Open(filename string) error {
+	dir := filepath.Dir(filename)
+
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -94,6 +104,12 @@ func (editor *Editor) Open(filename string) error {
 
 	// convert to utf-8
 	beatmap, err := osu.ParseBeatmap(f)
+	if err != nil {
+		return err
+	}
+
+	// open audio
+	err = editor.audio.Open(filepath.Join(dir, beatmap.AudioFilename))
 	if err != nil {
 		return err
 	}

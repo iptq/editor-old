@@ -10,7 +10,12 @@ import (
 func run() {
 	ed, err := editor.NewEditor()
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
+	}
+
+	err = ed.Open("/home/michael/osu/Songs/firststorm/Will Stetson - First Storm (Japanese ver.) (deadcode) [thanks for singing Brother].osu")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// start the editor
