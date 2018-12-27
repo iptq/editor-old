@@ -5,17 +5,18 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"os"
 	"strings"
 	"testing"
 )
 
 func testDeserializing(filename string) func(*testing.T) {
 	return func(t *testing.T) {
-		contents, err := ioutil.ReadFile("./test/" + filename)
+		f, err := os.Open("./test/" + filename)
 		if err != nil {
-			t.Errorf("failed to read file: %+v", err)
+			t.Errorf("failed to locate file '%s'", filename)
 		}
-		_, err = ParseBeatmap(string(contents))
+		_, err = ParseBeatmap(f)
 		if err != nil {
 			t.Errorf("failed to parse file: %+v", err)
 		}

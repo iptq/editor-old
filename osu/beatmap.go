@@ -1,8 +1,10 @@
 package osu
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -58,21 +60,22 @@ type Beatmap struct {
 	// TODO: events
 }
 
-func ParseBeatmap(contents string) (*Beatmap, error) {
+func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 	// Largely based on https://github.com/natsukagami/go-osu-parser/blob/master/parser.go
-	// TODO: read in a stream
 	var section string
+	var buf []byte
+	var err error
 
 	m := &Beatmap{}
-	lines := strings.Split(contents, "\n")
+	bufreader := bufio.NewReader(reader)
 
 	// compatibility for older versions
 	approachSet := false
 	artistUnicodeSet := false
 	titleUnicodeSet := false
 
-	for _, line := range lines {
-		line = strings.Trim(line, " \r\n")
+	for ; err == nil; buf, _, err = bufreader.ReadLine() {
+		line := strings.Trim(string(buf), " \r\n")
 		if len(line) == 0 {
 			// empty line
 			continue
@@ -170,6 +173,7 @@ func ParseBeatmap(contents string) (*Beatmap, error) {
 	return nil, fmt.Errorf("%#v", m)
 }
 
-func (m *Beatmap) Serialize() (string, error) {
-	return "", nil
+func (m *Beatmap) Serialize(writer io.Writer) error {
+	fmt.Fprintf(writer, "osu file format v%d\n", m.Version)
+	return nil
 }

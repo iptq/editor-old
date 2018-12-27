@@ -2,7 +2,6 @@ package main
 
 import (
 	"editor"
-	"fmt"
 	"log"
 
 	"github.com/faiface/pixel/pixelgl"
@@ -13,7 +12,6 @@ func run() {
 	if err != nil {
 		log.Panic(err)
 	}
-	fmt.Println(ed)
 
 	// start the editor
 	ed.Start()
