@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"os"
 	"path/filepath"
+	"time"
 
 	"editor/osu"
 	"editor/ui"
@@ -19,10 +20,13 @@ import (
 // Editor contains the state of the editor.
 type Editor struct {
 	// current audio timestamp in milliseconds
-	timestamp int
-	playing   bool
-	audio     *AudioManager
-	beatmap   *EditorBeatmap
+	timestamp  int
+	playing    bool
+	audio      *AudioManager
+	beatmap    *EditorBeatmap
+	lastUpdate time.Time
+
+	seeker *ui.Seeker
 
 	atlas  *text.Atlas
 	window *ui.Window
@@ -55,8 +59,23 @@ func NewEditor() (*Editor, error) {
 }
 
 func (editor *Editor) update() {
+	now := time.Now()
+	elapsed := now.Sub(editor.lastUpdate)
+
 	// update audio position based on scroll
 	editor.timestamp += int(editor.window.MouseScroll().Y * -150.0)
+
+	// change play/pause
+	if editor.window.JustReleased(pixelgl.KeySpace) {
+		editor.playing = !editor.playing
+	}
+
+	// if playing
+	if editor.playing {
+		editor.timestamp += int(elapsed.Nanoseconds() / 1000000)
+	}
+
+	editor.lastUpdate = now
 }
 
 func (editor *Editor) draw() {
@@ -141,6 +160,8 @@ func (editor *Editor) Open(filename string) error {
 
 // Start runs the editor
 func (editor *Editor) Start() {
+	editor.lastUpdate = time.Now()
+
 	// the main game loop
 	for !editor.window.Closed() {
 		editor.window.Clear(color.Black)
