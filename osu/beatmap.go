@@ -214,7 +214,7 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 			if obj, err := ParseHitObject(line); err == nil {
 				m.HitObjects = append(m.HitObjects, &obj)
 			} else {
-				// return nil, fmt.Errorf("invalid hitobject line: '%+v'", line)
+				return nil, fmt.Errorf("invalid hitobject line: '%+v'", line)
 			}
 		default:
 			return nil, fmt.Errorf("unknown section '%s'", section)
@@ -239,8 +239,6 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 
 // Serialize renders the beatmap into
 func (m *Beatmap) Serialize(writer io.Writer) error {
-	// fmt.Println(m)
-
 	fmt.Fprintf(writer, "osu file format v%d\n", m.Version)
 	fmt.Fprintf(writer, "\n")
 
@@ -287,6 +285,11 @@ func (m *Beatmap) Serialize(writer io.Writer) error {
 	fmt.Fprintf(writer, "\n")
 
 	fmt.Fprintf(writer, "[HitObjects]\n")
+	for _, obj := range m.HitObjects {
+		// TODO: handle err
+		line, _ := (*obj).Serialize()
+		fmt.Fprintf(writer, "%s\n", line)
+	}
 	fmt.Fprintf(writer, "\n")
 
 	return nil

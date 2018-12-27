@@ -21,12 +21,14 @@ func testSingle(filename string) func(*testing.T) {
 		beatmap, err := ParseBeatmap(f)
 		if err != nil {
 			t.Errorf("failed to parse file: %+v", err)
+			return
 		}
 
 		var buf bytes.Buffer
 		err = beatmap.Serialize(&buf)
 		if err != nil {
 			t.Errorf("failed to serialize: %+v", err)
+			return
 		}
 
 		t.Errorf("unserialized: %+v", buf.String())

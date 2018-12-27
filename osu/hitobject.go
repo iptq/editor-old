@@ -1,6 +1,7 @@
 package osu
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -51,8 +52,24 @@ type ObjSlider struct {
 	startTime int
 }
 
-func (obj *ObjSlider) GetULID() ulid.ULID {
+func ParseSlider(params parseParameters, parts []string) (ObjSlider, error) {
+	obj := ObjSlider{
+		ulid: NewULID(),
+	}
+	return obj, nil
+}
+
+func (obj ObjSlider) GetULID() ulid.ULID {
 	return obj.ulid
+}
+
+func (obj ObjSlider) GetStartTime() Timestamp {
+	return TimestampAbsolute(obj.startTime)
+}
+
+func (obj ObjSlider) Serialize() (string, error) {
+	// TODO:
+	return "", errors.New("unimplemented")
 }
 
 type ObjSpinner struct {
@@ -61,8 +78,24 @@ type ObjSpinner struct {
 	startTime int
 }
 
+func ParseSpinner(params parseParameters, parts []string) (ObjSpinner, error) {
+	obj := ObjSpinner{
+		ulid: NewULID(),
+	}
+	return obj, errors.New("unimplemented")
+}
+
 func (obj ObjSpinner) GetULID() ulid.ULID {
 	return obj.ulid
+}
+
+func (obj ObjSpinner) GetStartTime() Timestamp {
+	return TimestampAbsolute(obj.startTime)
+}
+
+func (obj ObjSpinner) Serialize() (string, error) {
+	// TODO:
+	return "", errors.New("unimplemented")
 }
 
 type parseParameters struct {
@@ -100,6 +133,10 @@ func ParseHitObject(line string) (HitObject, error) {
 	switch {
 	case (ty & 1) > 0:
 		return ParseHitCircle(params, parts)
+	case (ty & 2) > 0:
+		return ParseSlider(params, parts)
+	case (ty & 8) > 0:
+		return ParseSpinner(params, parts)
 	default:
 		return nil, fmt.Errorf("unknown hitobject type: %+v", ty)
 	}
