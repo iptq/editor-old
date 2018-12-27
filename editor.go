@@ -16,12 +16,6 @@ import (
 	"golang.org/x/image/font/basicfont"
 )
 
-const (
-	// the amount by which scrolling changes timestamp
-	// it's negative because scrolling down moves forward
-	SCROLL_CONSTANT float64 = -15.0
-)
-
 // Editor contains the state of the editor.
 type Editor struct {
 	// current audio timestamp in milliseconds
@@ -62,10 +56,7 @@ func NewEditor() (*Editor, error) {
 
 func (editor *Editor) update() {
 	// update audio position based on scroll
-	editor.timestamp += int(editor.window.MouseScroll().Y * SCROLL_CONSTANT)
-	if editor.timestamp < 0 {
-		editor.timestamp = 0
-	}
+	editor.timestamp += int(editor.window.MouseScroll().Y * -150.0)
 }
 
 func (editor *Editor) draw() {
@@ -73,24 +64,54 @@ func (editor *Editor) draw() {
 		return
 	}
 
+	length := editor.audio.GetSongLength()
+	percent := float64(editor.timestamp) * 100.0 / float64(length)
+
 	im := imdraw.New(nil)
 
-	// draw timeline at the bottom
-	// (1366 x 34) @ (0, 0)
+	// draw seeker at the bottom
 	im.Color = pixel.RGB(0.2, 0.2, 0.2)
 	im.Push(pixel.V(0, 0))
 	im.Push(pixel.V(1366, 48))
 	im.Rectangle(0)
 
+	// seeker line
+	im.Color = pixel.RGB(0.9, 0.9, 0.9)
+	im.Push(pixel.V(180, 23))
+	im.Push(pixel.V(180+1000, 25))
+	im.Rectangle(0)
+
+	// seeker handle
+	im.Color = pixel.RGB(1.0, 1.0, 1.0)
+	x := percent * 10
+	im.Push(pixel.V(178+x, 12))
+	im.Push(pixel.V(182+x, 36))
+	im.Rectangle(0)
+
 	// playfield
-	// (1056 x 594) @ (310, 30)
+	im.Color = pixel.RGB(0.1, 0.1, 0.1)
+	im.Push(pixel.V(155, 48))
+	im.Push(pixel.V(1211, 642))
+	im.Rectangle(0)
+
+	// timeline
+	im.Color = pixel.RGB(0.2, 0.2, 0.2)
+	im.Push(pixel.V(0, 642))
+	im.Push(pixel.V(1366, 720))
+	im.Rectangle(0)
+
+	// toolbar
+	im.Color = pixel.RGB(0.3, 0.3, 0.3)
+	im.Push(pixel.V(0, 720))
+	im.Push(pixel.V(1366, 768))
+	im.Rectangle(0)
 
 	im.Draw(editor.window)
 
 	// draw audio timestamp
+	formatted := FormatTimestamp(editor.timestamp)
 	timestamp := text.New(pixel.V(20, 20), editor.atlas)
-	length := editor.audio.GetSongLength()
-	fmt.Fprintf(timestamp, "%s (%.02f%%)", FormatTimestamp(editor.timestamp), float64(editor.timestamp)*100.0/float64(length))
+	fmt.Fprintf(timestamp, "%s (%.02f%%)", formatted, percent)
 	timestamp.Draw(editor.window, pixel.IM)
 }
 
@@ -123,8 +144,10 @@ func (editor *Editor) Start() {
 	// the main game loop
 	for !editor.window.Closed() {
 		editor.window.Clear(color.Black)
+
 		editor.update()
 		editor.draw()
+
 		editor.window.Update()
 	}
 }
