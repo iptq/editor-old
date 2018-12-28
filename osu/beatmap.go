@@ -244,7 +244,9 @@ func ParseBeatmap(reader io.Reader) (m *Beatmap, err error) {
 }
 
 // Serialize renders the beatmap into
-func (m *Beatmap) Serialize(writer io.Writer) error {
+func (m *Beatmap) Serialize(writer io.Writer) (err error) {
+	var line string
+
 	fmt.Fprintf(writer, "osu file format v%d\n", m.Version)
 	fmt.Fprintf(writer, "\n")
 
@@ -293,10 +295,14 @@ func (m *Beatmap) Serialize(writer io.Writer) error {
 	fmt.Fprintf(writer, "[HitObjects]\n")
 	for _, obj := range m.HitObjects {
 		// TODO: handle err
-		line, _ := (*obj).Serialize()
+		line, err = (*obj).Serialize()
+		if err != nil {
+			return
+		}
+
 		fmt.Fprintf(writer, "%s\n", line)
 	}
 	fmt.Fprintf(writer, "\n")
 
-	return nil
+	return
 }
