@@ -40,11 +40,11 @@ func ParseHitCircle(params commonParameters, parts []string) (ObjCircle, error) 
 
 	obj := ObjCircle{
 		ulid:      NewULID(),
-		x:         params.X,
-		y:         params.Y,
-		startTime: TimestampAbsolute(params.StartTime),
-		newCombo:  params.NewCombo,
-		additions: Hitsound(params.Hitsound),
+		x:         params.x,
+		y:         params.y,
+		startTime: TimestampAbsolute(params.startTime),
+		newCombo:  params.newCombo,
+		additions: Hitsound(params.hitsound),
 		extras:    extras,
 	}
 	return obj, nil
@@ -64,7 +64,7 @@ func (obj ObjCircle) Serialize() (string, error) {
 		obj.y,
 		obj.startTime,
 		1|(WHAT_THE_FUCK[obj.newCombo]<<2),
-		0,
+		obj.additions,
 		obj.extras.String(),
 	), nil
 }
@@ -77,7 +77,7 @@ type ObjSlider struct {
 	additions Hitsound
 	extras    *Extras
 
-	sliderKind    int
+	splineKind    SplineKind
 	ctlPoints     []IntPoint
 	spline        []FloatPoint
 	repeatCount   int
@@ -100,9 +100,6 @@ func ParseSlider(params commonParameters, parts []string) (obj ObjSlider, err er
 	// 	return ObjSlider{}, err
 	// }
 
-	ctlPoints, err := ParseControlPoints(parts[5])
-	spline, err := SplineFrom(ctlPoints)
-
 	if len(parts) > 7 {
 		// pixelLength
 		pixelLength, err = strconv.ParseFloat(parts[3], 64)
@@ -119,16 +116,20 @@ func ParseSlider(params commonParameters, parts []string) (obj ObjSlider, err er
 		}
 	}
 
+	kind, ctlPoints, err := ParseControlPoints(parts[5])
+	spline, err := SplineFrom(kind, ctlPoints, pixelLength)
+
 	obj = ObjSlider{
 		ulid:      NewULID(),
-		x:         params.X,
-		y:         params.Y,
-		startTime: TimestampAbsolute(params.StartTime),
-		newCombo:  params.NewCombo,
-		additions: Hitsound(params.Hitsound),
+		x:         params.x,
+		y:         params.y,
+		startTime: TimestampAbsolute(params.startTime),
+		newCombo:  params.newCombo,
+		additions: Hitsound(params.hitsound),
 		extras:    extras,
 
 		spline:      spline,
+		splineKind:  kind,
 		pixelLength: pixelLength,
 	}
 	return
@@ -149,14 +150,36 @@ func (obj ObjSlider) Serialize() (string, error) {
 
 type ObjSpinner struct {
 	ulid      ulid.ULID
+	x, y      int
 	startTime Timestamp
+	endTime   Timestamp
+	newCombo  bool
+	additions Hitsound
+	extras    *Extras
 }
 
-func ParseSpinner(params commonParameters, parts []string) (ObjSpinner, error) {
-	obj := ObjSpinner{
-		ulid: NewULID(),
+func ParseSpinner(params commonParameters, parts []string) (obj ObjSpinner, err error) {
+	endTime, err := strconv.Atoi(parts[5])
+	if err != nil {
+		return
 	}
-	return obj, errors.New("unimplemented")
+
+	extras, err := ParseExtras(parts[6])
+	if err != nil {
+		return
+	}
+
+	obj = ObjSpinner{
+		ulid:      NewULID(),
+		x:         params.x,
+		y:         params.y,
+		startTime: TimestampAbsolute(params.startTime),
+		endTime:   TimestampAbsolute(endTime),
+		newCombo:  params.newCombo,
+		additions: params.hitsound,
+		extras:    extras,
+	}
+	return
 }
 
 func (obj ObjSpinner) GetULID() ulid.ULID {
@@ -168,15 +191,22 @@ func (obj ObjSpinner) GetStartTime() Timestamp {
 }
 
 func (obj ObjSpinner) Serialize() (string, error) {
-	// TODO:
-	return "", errors.New("unimplemented")
+	return fmt.Sprintf("%d,%d,%d,%d,%d,%d,%s",
+		obj.x,
+		obj.y,
+		obj.startTime,
+		8|(WHAT_THE_FUCK[obj.newCombo]<<2),
+		obj.additions,
+		obj.endTime,
+		obj.extras.String(),
+	), nil
 }
 
 type commonParameters struct {
-	X, Y      int
-	StartTime int
-	NewCombo  bool
-	Hitsound  int
+	x, y      int
+	startTime int
+	newCombo  bool
+	hitsound  int
 }
 
 func ParseHitObject(line string) (HitObject, error) {

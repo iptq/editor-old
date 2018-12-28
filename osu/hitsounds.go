@@ -26,6 +26,7 @@ const (
 	HITSOUND_CLAP    = 8
 )
 
+// Extras describes a list of extra fields that pertains to an object's hitsounds.
 type Extras struct {
 	SampleSet    int
 	AdditionSet  int
@@ -34,37 +35,48 @@ type Extras struct {
 	Filename     string
 }
 
-func ParseExtras(line string) (*Extras, error) {
+func ParseExtras(line string) (extras *Extras, err error) {
+	var sampleSet, additionSet, customIndex, sampleVolume int
+
 	parts := strings.Split(line, ":")
 	if strings.Count(line, ":") == 0 {
 		// technically the extras field is optional, so if it's blank, assume "0:0:0:0:"
 		return &Extras{}, nil
-	} else if len(parts) != 5 {
-		return nil, fmt.Errorf("len(extras) = %d != 5", len(parts))
+	} else if len(parts) < 2 {
+		return nil, fmt.Errorf("len(extras) = %d < 2", len(parts))
 	}
 
-	sampleSet, err := strconv.Atoi(parts[0])
+	sampleSet, err = strconv.Atoi(parts[0])
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	additionSet, err := strconv.Atoi(parts[1])
+	additionSet, err = strconv.Atoi(parts[1])
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	customIndex, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return nil, err
+	if len(parts) > 2 {
+		customIndex, err = strconv.Atoi(parts[2])
+		if err != nil {
+			return
+		}
 	}
 
-	sampleVolume, err := strconv.Atoi(parts[3])
-	if err != nil {
-		return nil, err
+	if len(parts) > 3 {
+		sampleVolume, err = strconv.Atoi(parts[3])
+		if err != nil {
+			return
+		}
 	}
 
-	extras := &Extras{sampleSet, additionSet, customIndex, sampleVolume, parts[4]}
-	return extras, nil
+	var filename string
+	if len(parts) > 4 {
+		filename = parts[4]
+	}
+
+	extras = &Extras{sampleSet, additionSet, customIndex, sampleVolume, filename}
+	return
 }
 
 func (extras Extras) String() string {

@@ -66,13 +66,12 @@ type Beatmap struct {
 	// TODO: events
 }
 
-func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
+func ParseBeatmap(reader io.Reader) (m *Beatmap, err error) {
 	// Largely based on https://github.com/natsukagami/go-osu-parser/blob/master/parser.go
 	var section string
 	var buf []byte
-	var err error
 
-	m := &Beatmap{}
+	m = &Beatmap{}
 	bufreader := bufio.NewReader(reader)
 
 	// compatibility for older versions
@@ -223,6 +222,11 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 		}
 	}
 
+	if err == io.EOF {
+		// this is actually a success
+		err = nil
+	}
+
 	// compatibility for older versions
 	if !approachSet {
 		// AR used to be set by OD
@@ -236,7 +240,7 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 	}
 
 	// return nil, fmt.Errorf("%#v", m)
-	return m, nil
+	return
 }
 
 // Serialize renders the beatmap into
