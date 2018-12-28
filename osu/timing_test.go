@@ -30,7 +30,7 @@ type testCase struct {
 
 var testCases = []testCase{
 	// no change from the measure at all
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: uTP.GetTimestamp(),
 			bpm:      uTP.GetBPM(),
@@ -43,7 +43,7 @@ var testCases = []testCase{
 	},
 
 	// +1 measure (measure is 300ms, times 4 beats)
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: uTP.GetTimestamp(),
 			bpm:      uTP.GetBPM(),
@@ -56,7 +56,7 @@ var testCases = []testCase{
 	},
 
 	// a single beat
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: uTP.GetTimestamp(),
 			bpm:      uTP.GetBPM(),
@@ -69,7 +69,7 @@ var testCases = []testCase{
 	},
 
 	// half of a measure
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: uTP.GetTimestamp(),
 			bpm:      uTP.GetBPM(),
@@ -82,7 +82,7 @@ var testCases = []testCase{
 	},
 
 	// 3 quarter notes
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: uTP.GetTimestamp(),
 			bpm:      uTP.GetBPM(),
@@ -96,7 +96,7 @@ var testCases = []testCase{
 
 	// ok same thing again except with the inherited timing point
 	// no change from the measure at all
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: iTP.GetTimestamp(),
 			bpm:      iTP.GetBPM(),
@@ -109,7 +109,7 @@ var testCases = []testCase{
 	},
 
 	// +1 measure, same as above
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: iTP.GetTimestamp(),
 			bpm:      iTP.GetBPM(),
@@ -122,7 +122,7 @@ var testCases = []testCase{
 	},
 
 	// a single beat
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: iTP.GetTimestamp(),
 			bpm:      iTP.GetBPM(),
@@ -135,7 +135,7 @@ var testCases = []testCase{
 	},
 
 	// half of a measure
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: iTP.GetTimestamp(),
 			bpm:      iTP.GetBPM(),
@@ -148,7 +148,7 @@ var testCases = []testCase{
 	},
 
 	// 3 quarter notes
-	testCase{
+	{
 		t1: TimestampRelative{
 			previous: iTP.GetTimestamp(),
 			bpm:      iTP.GetBPM(),
