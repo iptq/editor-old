@@ -2,7 +2,13 @@ language: go
 go:
   - 1.11
 
+env:
+  - GO111MODULE=on
+
 before_install:
   - go get github.com/mattn/goveralls
+
 script:
-  - $HOME/gopath/bin/goveralls -v -service=travis-ci
+  - go test -v ./
+  - go test -v ./osu
+  - go build -v ./cmd/editor
