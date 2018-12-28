@@ -1,23 +1,195 @@
 package osu
 
-/*
-TODO: At some point, test using this data:
+import (
+	"fmt"
+	"testing"
+)
 
-    pub fn get_test_data() -> Vec<(TimeLocation, i32)> {
-        let test_data = vec![
-            // uninherited timing points
-            (TimeLocation::Relative(&TP, 0, Ratio::new(0, 1)), 12345), // no change from the measure at all
-            (TimeLocation::Relative(&TP, 1, Ratio::new(0, 1)), 13545), // +1 measure (measure is 300ms, times 4 beats)
-            (TimeLocation::Relative(&TP, 0, Ratio::new(1, 4)), 12645), // a single beat
-            (TimeLocation::Relative(&TP, 0, Ratio::new(1, 2)), 12945), // half of a measure
-            (TimeLocation::Relative(&TP, 0, Ratio::new(3, 4)), 13245), // 3 quarter notes
-            // ok, on to inherited
-            (TimeLocation::Relative(&ITP, 0, Ratio::new(0, 1)), 13545), // no change from the measure at all
-            (TimeLocation::Relative(&ITP, 1, Ratio::new(0, 1)), 14745), // +1 measure, same as above
-            (TimeLocation::Relative(&ITP, 0, Ratio::new(1, 4)), 13845), // a single beat
-            (TimeLocation::Relative(&ITP, 0, Ratio::new(1, 2)), 14145), // half of a measure
-            (TimeLocation::Relative(&ITP, 0, Ratio::new(3, 4)), 14445), // 3 quarter notes
-        ];
-        return test_data;
-    }
-*/
+var uTP = UninheritedTimingPoint{
+	BPM:   200,
+	Meter: 4,
+	Time:  TimestampAbsolute(12345),
+}
+
+var iTP = InheritedTimingPoint{
+	Parent: TimingPoint(uTP),
+	Time: TimestampRelative{
+		previous: uTP.GetTimestamp(),
+		bpm:      uTP.GetBPM(),
+		meter:    uTP.GetMeter(),
+		measures: 1,
+		num:      0,
+		denom:    1,
+	},
+}
+
+type testCase struct {
+	t1 TimestampRelative
+	t2 TimestampAbsolute
+}
+
+var testCases = []testCase{
+	// no change from the measure at all
+	testCase{
+		t1: TimestampRelative{
+			previous: uTP.GetTimestamp(),
+			bpm:      uTP.GetBPM(),
+			meter:    uTP.GetMeter(),
+			measures: 0,
+			num:      0,
+			denom:    1,
+		},
+		t2: TimestampAbsolute(12345),
+	},
+
+	// +1 measure (measure is 300ms, times 4 beats)
+	testCase{
+		t1: TimestampRelative{
+			previous: uTP.GetTimestamp(),
+			bpm:      uTP.GetBPM(),
+			meter:    uTP.GetMeter(),
+			measures: 1,
+			num:      0,
+			denom:    1,
+		},
+		t2: TimestampAbsolute(13545),
+	},
+
+	// a single beat
+	testCase{
+		t1: TimestampRelative{
+			previous: uTP.GetTimestamp(),
+			bpm:      uTP.GetBPM(),
+			meter:    uTP.GetMeter(),
+			measures: 0,
+			num:      1,
+			denom:    4,
+		},
+		t2: TimestampAbsolute(12645),
+	},
+
+	// half of a measure
+	testCase{
+		t1: TimestampRelative{
+			previous: uTP.GetTimestamp(),
+			bpm:      uTP.GetBPM(),
+			meter:    uTP.GetMeter(),
+			measures: 0,
+			num:      1,
+			denom:    2,
+		},
+		t2: TimestampAbsolute(12945),
+	},
+
+	// 3 quarter notes
+	testCase{
+		t1: TimestampRelative{
+			previous: uTP.GetTimestamp(),
+			bpm:      uTP.GetBPM(),
+			meter:    uTP.GetMeter(),
+			measures: 0,
+			num:      3,
+			denom:    4,
+		},
+		t2: TimestampAbsolute(13245),
+	},
+
+	// ok same thing again except with the inherited timing point
+	// no change from the measure at all
+	testCase{
+		t1: TimestampRelative{
+			previous: iTP.GetTimestamp(),
+			bpm:      iTP.GetBPM(),
+			meter:    iTP.GetMeter(),
+			measures: 0,
+			num:      0,
+			denom:    1,
+		},
+		t2: TimestampAbsolute(13545),
+	},
+
+	// +1 measure, same as above
+	testCase{
+		t1: TimestampRelative{
+			previous: iTP.GetTimestamp(),
+			bpm:      iTP.GetBPM(),
+			meter:    iTP.GetMeter(),
+			measures: 1,
+			num:      0,
+			denom:    1,
+		},
+		t2: TimestampAbsolute(14745),
+	},
+
+	// a single beat
+	testCase{
+		t1: TimestampRelative{
+			previous: iTP.GetTimestamp(),
+			bpm:      iTP.GetBPM(),
+			meter:    iTP.GetMeter(),
+			measures: 0,
+			num:      1,
+			denom:    4,
+		},
+		t2: TimestampAbsolute(13845),
+	},
+
+	// half of a measure
+	testCase{
+		t1: TimestampRelative{
+			previous: iTP.GetTimestamp(),
+			bpm:      iTP.GetBPM(),
+			meter:    iTP.GetMeter(),
+			measures: 0,
+			num:      1,
+			denom:    2,
+		},
+		t2: TimestampAbsolute(14145),
+	},
+
+	// 3 quarter notes
+	testCase{
+		t1: TimestampRelative{
+			previous: iTP.GetTimestamp(),
+			bpm:      iTP.GetBPM(),
+			meter:    iTP.GetMeter(),
+			measures: 0,
+			num:      3,
+			denom:    4,
+		},
+		t2: TimestampAbsolute(14445),
+	},
+}
+
+func timingSubtest(c int, tcase testCase) func(t *testing.T) {
+	return func(t *testing.T) {
+		t1t := tcase.t1.Milliseconds()
+		t2t := tcase.t2.Milliseconds()
+
+		// check that they're equal first
+		if t1t != t2t {
+			t.Errorf("case %dA: expected %d, got %d (%v)", c, t2t, t1t, tcase.t1)
+			return
+		}
+
+		// now check in reverse
+		t2r, err := tcase.t2.IntoRelative(tcase.t1.previous, tcase.t1.bpm, tcase.t1.meter)
+		if err != nil {
+			t.Errorf("case %dB: error in IntoRelative: %v", c, err)
+			return
+		}
+		// t.Logf("t2r = %+v\n", t2r)
+
+		t2t = t2r.Milliseconds()
+		if t1t != t2t {
+			t.Errorf("case %dB: expected %d, got %d", c, t1t, t2t)
+			return
+		}
+	}
+}
+
+func TestTiming(t *testing.T) {
+	for c, tcase := range testCases {
+		t.Run(fmt.Sprintf("test%d", c), timingSubtest(c, tcase))
+	}
+}

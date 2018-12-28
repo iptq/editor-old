@@ -206,11 +206,11 @@ func ParseBeatmap(reader io.Reader) (m *Beatmap, err error) {
 				return nil, fmt.Errorf("line %d\tfailed to match: '%+v'", nLine, line)
 			}
 		case "events":
-			// TODO
+			// TODO:
 		case "timingpoints":
-			// TODO
+			// TODO:
 		case "colours":
-			// TODO
+			// TODO:
 		case "hitobjects":
 			if obj, err := ParseHitObject(line); err == nil {
 				m.HitObjects = append(m.HitObjects, &obj)

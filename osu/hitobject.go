@@ -29,16 +29,17 @@ type ObjCircle struct {
 	extras    *Extras
 }
 
-func ParseHitCircle(params commonParameters, parts []string) (ObjCircle, error) {
-	if len(parts) < 6 {
-		return ObjCircle{}, fmt.Errorf("len(hitcircle) = %d != 6", len(parts))
-	}
-	extras, err := ParseExtras(parts[5])
-	if err != nil {
-		return ObjCircle{}, err
+func ParseHitCircle(params commonParameters, parts []string) (obj ObjCircle, err error) {
+	var extras *Extras = &Extras{}
+
+	if len(parts) > 5 {
+		extras, err = ParseExtras(parts[5])
+		if err != nil {
+			return ObjCircle{}, err
+		}
 	}
 
-	obj := ObjCircle{
+	obj = ObjCircle{
 		ulid:      NewULID(),
 		x:         params.x,
 		y:         params.y,
@@ -47,7 +48,7 @@ func ParseHitCircle(params commonParameters, parts []string) (ObjCircle, error) 
 		additions: Hitsound(params.hitsound),
 		extras:    extras,
 	}
-	return obj, nil
+	return
 }
 
 func (obj ObjCircle) GetULID() ulid.ULID {
@@ -211,7 +212,6 @@ type commonParameters struct {
 
 func ParseHitObject(line string) (HitObject, error) {
 	parts := strings.Split(line, ",")
-	fmt.Println("parts", parts, len(parts))
 	if len(parts) < 5 {
 		return nil, errors.New("len(parts) < 5")
 	}

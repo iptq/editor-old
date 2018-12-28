@@ -2,6 +2,7 @@ package osu
 
 import (
 	"fmt"
+	"math"
 	"sort"
 )
 
@@ -24,9 +25,9 @@ func (t TimestampAbsolute) Milliseconds() int {
 }
 
 type snapping struct {
-	Num   int
-	Denom int
-	Delta float64
+	num   int
+	denom int
+	delta float64
 }
 
 type snappings []snapping
@@ -40,20 +41,18 @@ func (s snappings) Swap(i, j int) {
 }
 
 func (s snappings) Less(i, j int) bool {
-	return s[i].Delta < s[j].Delta
+	return s[i].delta < s[j].delta
 }
 
 // IntoRelative attempts to convert an absolute timestamp into a relative one
-func (t TimestampAbsolute) IntoRelative(to *TimingPoint) (*TimestampRelative, error) {
-	bpm := (*to).GetBPM()
-	meter := (*to).GetMeter()
+func (t TimestampAbsolute) IntoRelative(to Timestamp, bpm float64, meter int) (*TimestampRelative, error) {
+	// return nil, fmt.Errorf("to = %+v", to)
 
 	msPerBeat := 60000.0 / bpm
 	msPerMeasure := msPerBeat * float64(meter)
 
-	// TODO:
-	base := t
-	cur := t
+	base := to.Milliseconds()
+	cur := t.Milliseconds()
 
 	measures := int(float64(cur-base) / msPerMeasure)
 	measureStart := float64(base) + float64(measures)*msPerMeasure
@@ -66,48 +65,56 @@ func (t TimestampAbsolute) IntoRelative(to *TimingPoint) (*TimestampRelative, er
 
 			snapAt = msPerMeasure * float64(i) / float64(denom)
 			snapTimes = append(snapTimes, snapping{
-				Num:   i,
-				Denom: denom,
-				Delta: offset - snapAt,
+				num:   i,
+				denom: denom,
+				delta: math.Abs(offset - snapAt),
 			})
 
 			snapAt = msPerMeasure * float64(i+denom) / float64(denom)
 			snapTimes = append(snapTimes, snapping{
-				Num:   i + denom,
-				Denom: denom,
-				Delta: offset - snapAt,
+				num:   i + denom,
+				denom: denom,
+				delta: math.Abs(offset - snapAt),
 			})
 		}
 	}
 	sort.Sort(snappings(snapTimes))
 
 	first := snapTimes[0]
-	if first.Delta > ESTIMATE_THRESHOLD {
+	if first.delta > ESTIMATE_THRESHOLD {
 		return nil, fmt.Errorf("Could not find accurate snapping.")
 	}
 
 	t2 := &TimestampRelative{
 		previous: to,
+		bpm:      bpm,
+		meter:    meter,
 		measures: measures,
+		num:      first.num,
+		denom:    first.denom,
 	}
 	return t2, nil
 }
 
 type TimestampRelative struct {
-	previous *TimingPoint
+	previous Timestamp
+	bpm      float64
+	meter    int
+
 	measures int
 	num      int
 	denom    int
 }
 
 func (t TimestampRelative) Milliseconds() int {
-	base := (*t.previous).GetTimestamp().Milliseconds()
-	bpm := (*t.previous).GetBPM()
+	// fmt.Println("previous:", t.previous, t.previous.Milliseconds())
+	base := t.previous.Milliseconds()
+	msPerBeat := 60000.0 / t.bpm
+	msPerMeasure := msPerBeat * float64(t.meter)
 
-	msPerBeat := 60000.0 / bpm
-	measures := float64(t.measures) + float64(t.num)/float64(t.denom)
-
-	return int(float64(base) + measures*msPerBeat)
+	measureOffset := msPerMeasure * float64(t.measures)
+	remainingOffset := msPerMeasure * float64(t.num) / float64(t.denom)
+	return int(float64(base) + measureOffset + remainingOffset)
 }
 
 type TimingPoint interface {
@@ -119,4 +126,40 @@ type TimingPoint interface {
 
 	// Get the meter of the nearest uninherited timing section to which this belongs
 	GetMeter() int
+}
+
+type UninheritedTimingPoint struct {
+	BPM   float64
+	Meter int
+	Time  Timestamp
+}
+
+func (tp UninheritedTimingPoint) GetTimestamp() Timestamp {
+	return tp.Time
+}
+
+func (tp UninheritedTimingPoint) GetBPM() float64 {
+	return tp.BPM
+}
+
+func (tp UninheritedTimingPoint) GetMeter() int {
+	return tp.Meter
+}
+
+type InheritedTimingPoint struct {
+	Parent       TimingPoint
+	Time         Timestamp
+	SvMultiplier float64
+}
+
+func (tp InheritedTimingPoint) GetTimestamp() Timestamp {
+	return tp.Time
+}
+
+func (tp InheritedTimingPoint) GetBPM() float64 {
+	return tp.Parent.GetBPM()
+}
+
+func (tp InheritedTimingPoint) GetMeter() int {
+	return tp.Parent.GetMeter()
 }
