@@ -1,7 +1,6 @@
 package osu
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -37,9 +36,11 @@ type Extras struct {
 
 func ParseExtras(line string) (*Extras, error) {
 	parts := strings.Split(line, ":")
-
-	if len(parts) != 5 {
-		return nil, errors.New("len(extras) != 5")
+	if strings.Count(line, ":") == 0 {
+		// technically the extras field is optional, so if it's blank, assume "0:0:0:0:"
+		return &Extras{}, nil
+	} else if len(parts) != 5 {
+		return nil, fmt.Errorf("len(extras) = %d != 5", len(parts))
 	}
 
 	sampleSet, err := strconv.Atoi(parts[0])
@@ -47,17 +48,17 @@ func ParseExtras(line string) (*Extras, error) {
 		return nil, err
 	}
 
-	additionSet, err := strconv.Atoi(parts[0])
+	additionSet, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return nil, err
 	}
 
-	customIndex, err := strconv.Atoi(parts[0])
+	customIndex, err := strconv.Atoi(parts[2])
 	if err != nil {
 		return nil, err
 	}
 
-	sampleVolume, err := strconv.Atoi(parts[0])
+	sampleVolume, err := strconv.Atoi(parts[3])
 	if err != nil {
 		return nil, err
 	}

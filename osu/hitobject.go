@@ -25,17 +25,27 @@ type ObjCircle struct {
 	x, y      int
 	startTime Timestamp
 	newCombo  bool
-	hitsound  Hitsound
+	additions Hitsound
+	extras    *Extras
 }
 
 func ParseHitCircle(params commonParameters, parts []string) (ObjCircle, error) {
+	if len(parts) < 6 {
+		return ObjCircle{}, fmt.Errorf("len(hitcircle) = %d != 6", len(parts))
+	}
+	extras, err := ParseExtras(parts[5])
+	if err != nil {
+		return ObjCircle{}, err
+	}
+
 	obj := ObjCircle{
 		ulid:      NewULID(),
 		x:         params.X,
 		y:         params.Y,
 		startTime: TimestampAbsolute(params.StartTime),
 		newCombo:  params.NewCombo,
-		hitsound:  Hitsound(params.Hitsound),
+		additions: Hitsound(params.Hitsound),
+		extras:    extras,
 	}
 	return obj, nil
 }
@@ -55,21 +65,73 @@ func (obj ObjCircle) Serialize() (string, error) {
 		obj.startTime,
 		1|(WHAT_THE_FUCK[obj.newCombo]<<2),
 		0,
-		"0:0:0:0:",
+		obj.extras.String(),
 	), nil
 }
 
 type ObjSlider struct {
-	ulid ulid.ULID
+	ulid      ulid.ULID
+	x, y      int
+	startTime Timestamp
+	newCombo  bool
+	additions Hitsound
+	extras    *Extras
 
-	startTime int
+	sliderKind    int
+	ctlPoints     []IntPoint
+	spline        []FloatPoint
+	repeatCount   int
+	pixelLength   float64
+	edgeHitsounds []Hitsound
+	edgeAdditions []Hitsound
 }
 
-func ParseSlider(params commonParameters, parts []string) (ObjSlider, error) {
-	obj := ObjSlider{
-		ulid: NewULID(),
+func ParseSlider(params commonParameters, parts []string) (obj ObjSlider, err error) {
+	var (
+		pixelLength float64
+		extras      *Extras = &Extras{}
+	)
+
+	// if len(parts) < 11 {
+	// 	return ObjSlider{}, fmt.Errorf("len(slider) = %d < 11", len(parts))
+	// }
+	// extras, err := ParseExtras(parts[10])
+	// if err != nil {
+	// 	return ObjSlider{}, err
+	// }
+
+	ctlPoints, err := ParseControlPoints(parts[5])
+	spline, err := SplineFrom(ctlPoints)
+
+	if len(parts) > 7 {
+		// pixelLength
+		pixelLength, err = strconv.ParseFloat(parts[3], 64)
+		if err != nil {
+			return
+		}
 	}
-	return obj, nil
+
+	if len(parts) > 10 {
+		// extras
+		extras, err = ParseExtras(parts[10])
+		if err != nil {
+			return
+		}
+	}
+
+	obj = ObjSlider{
+		ulid:      NewULID(),
+		x:         params.X,
+		y:         params.Y,
+		startTime: TimestampAbsolute(params.StartTime),
+		newCombo:  params.NewCombo,
+		additions: Hitsound(params.Hitsound),
+		extras:    extras,
+
+		spline:      spline,
+		pixelLength: pixelLength,
+	}
+	return
 }
 
 func (obj ObjSlider) GetULID() ulid.ULID {
@@ -77,7 +139,7 @@ func (obj ObjSlider) GetULID() ulid.ULID {
 }
 
 func (obj ObjSlider) GetStartTime() Timestamp {
-	return TimestampAbsolute(obj.startTime)
+	return obj.startTime
 }
 
 func (obj ObjSlider) Serialize() (string, error) {
@@ -86,9 +148,8 @@ func (obj ObjSlider) Serialize() (string, error) {
 }
 
 type ObjSpinner struct {
-	ulid ulid.ULID
-
-	startTime int
+	ulid      ulid.ULID
+	startTime Timestamp
 }
 
 func ParseSpinner(params commonParameters, parts []string) (ObjSpinner, error) {
@@ -103,7 +164,7 @@ func (obj ObjSpinner) GetULID() ulid.ULID {
 }
 
 func (obj ObjSpinner) GetStartTime() Timestamp {
-	return TimestampAbsolute(obj.startTime)
+	return obj.startTime
 }
 
 func (obj ObjSpinner) Serialize() (string, error) {
@@ -120,6 +181,10 @@ type commonParameters struct {
 
 func ParseHitObject(line string) (HitObject, error) {
 	parts := strings.Split(line, ",")
+	fmt.Println("parts", parts, len(parts))
+	if len(parts) < 5 {
+		return nil, errors.New("len(parts) < 5")
+	}
 
 	x, err := strconv.Atoi(parts[0])
 	if err != nil {

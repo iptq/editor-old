@@ -20,7 +20,7 @@ func testSingle(filename string) func(*testing.T) {
 
 		beatmap, err := ParseBeatmap(f)
 		if err != nil {
-			t.Errorf("failed to parse file: %+v", err)
+			t.Errorf("failed to parse file '%s': %+v", filename, err)
 			return
 		}
 

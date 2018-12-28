@@ -82,7 +82,9 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 
 	m.BeatmapSetID = -1
 
-	for ; err == nil; buf, _, err = bufreader.ReadLine() {
+	for nLine := 0; err == nil; buf, _, err = bufreader.ReadLine() {
+		nLine += 1
+
 		line := strings.Trim(string(buf), " \r\n")
 		if len(line) == 0 {
 			// empty line
@@ -202,7 +204,7 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 					// return nil, fmt.Errorf("unknown key '%s'", key)
 				}
 			} else {
-				return nil, fmt.Errorf("failed to match: '%+v'", line)
+				return nil, fmt.Errorf("line %d\tfailed to match: '%+v'", nLine, line)
 			}
 		case "events":
 			// TODO
@@ -214,10 +216,10 @@ func ParseBeatmap(reader io.Reader) (*Beatmap, error) {
 			if obj, err := ParseHitObject(line); err == nil {
 				m.HitObjects = append(m.HitObjects, &obj)
 			} else {
-				return nil, fmt.Errorf("invalid hitobject: %s (line: '%s')", err, line)
+				return nil, fmt.Errorf("line %d\tinvalid hitobject: %s (line: '%s')", nLine, err, line)
 			}
 		default:
-			return nil, fmt.Errorf("unknown section '%s'", section)
+			return nil, fmt.Errorf("line %d\tunknown section '%s'", nLine, section)
 		}
 	}
 
