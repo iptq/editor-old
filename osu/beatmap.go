@@ -224,6 +224,7 @@ func ParseBeatmap(reader io.Reader) (m *Beatmap, err error) {
 
 	if err == io.EOF {
 		// this is actually a success
+		// set err to nil so we can return success
 		err = nil
 	}
 

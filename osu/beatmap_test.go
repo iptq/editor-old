@@ -31,7 +31,7 @@ func testSingle(filename string) func(*testing.T) {
 			return
 		}
 
-		// t.Errorf("unserialized: %+v", buf.String())
+		t.Errorf("unserialized: %+v", buf.String())
 	}
 }
 

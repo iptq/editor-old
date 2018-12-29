@@ -20,5 +20,8 @@ func EditorBeatmapFrom(b *osu.Beatmap) *EditorBeatmap {
 // GetVisibleObjects returns all objects that can be seen at a particular
 // instant in time.
 func (m EditorBeatmap) GetVisibleObjects(timestamp int) {
+	// TODO:
+	// leftBound := timestamp - 5000
+	// rightBound := timestamp + 5000
 
 }

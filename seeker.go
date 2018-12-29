@@ -41,7 +41,7 @@ func (s Seeker) Draw(ctx *ui.Context) {
 	ctx.Rectangle(0)
 
 	// seeker line
-	ctx.Color = pixel.RGB(0.9, 0.9, 0.9)
+	ctx.Color = pixel.RGB(0.5, 0.5, 0.5)
 	ctx.Push(pixel.V(180, 23))
 	ctx.Push(pixel.V(180+1000, 25))
 	ctx.Rectangle(0)
@@ -49,7 +49,7 @@ func (s Seeker) Draw(ctx *ui.Context) {
 	// seeker handle
 	ctx.Color = pixel.RGB(1.0, 1.0, 1.0)
 	x := percent * 10
-	ctx.Push(pixel.V(178+x, 12))
-	ctx.Push(pixel.V(182+x, 36))
+	ctx.Push(pixel.V(180-4+x, 4))
+	ctx.Push(pixel.V(180+4+x, 44))
 	ctx.Rectangle(0)
 }

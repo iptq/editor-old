@@ -1,21 +1,15 @@
 package ui
 
 import (
-	"github.com/faiface/pixel/pixelgl"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 type Window struct {
-	*pixelgl.Window
+	*sdl.Window
 }
 
-func NewWindow(config pixelgl.WindowConfig) (*Window, error) {
-	inner, err := pixelgl.NewWindow(config)
-	if err != nil {
-		return nil, err
+func NewWindow() Window {
+	return Window{
+		Window: nil,
 	}
-
-	window := &Window{
-		Window: inner,
-	}
-	return window, nil
 }

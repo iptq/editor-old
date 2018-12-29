@@ -11,5 +11,6 @@ require (
 	github.com/hajimehoshi/go-mp3 v0.1.1 // indirect
 	github.com/oklog/ulid v1.3.1
 	github.com/pkg/errors v0.8.0 // indirect
+	github.com/veandco/go-sdl2 v0.3.0
 	golang.org/x/image v0.0.0-20181116024801-cd38e8056d9b
 )

@@ -8,6 +8,9 @@ import (
 )
 
 func run() {
+	ui.Init()
+	defer ui.Close()
+
 	ed, err := editor.NewEditor()
 	if err != nil {
 		log.Fatal(err)

@@ -47,15 +47,25 @@ func ParseControlPoints(line string) (kind SplineKind, points []IntPoint, err er
 func SplineFrom(kind SplineKind, points []IntPoint, length float64) (spline []FloatPoint, err error) {
 	switch kind {
 	case SPLINE_LINEAR:
-		if len(points) > 2 {
+		if len(points) < 2 {
+			err = errors.New("not enough points to create a linear spline")
+			return
+		} else if len(points) > 2 {
 			err = errors.New("trying to create linear spline with more than 2 points")
 			return
 		}
 
-		// just return the same two points casted to float xd
-		for _, point := range points {
-			spline = append(spline, point.ToFloat())
-		}
+		A := points[0].ToFloat()
+		B := points[1].ToFloat()
+
+		// since this is linear, and we can draw lines via the graphics library anyway,
+		// we don't need to calculate a million points
+		spline = append(spline, A)
+
+		// for the end point, we have to shorten the slider based on the pixel length
+		// given to us in the osu file
+		unit := B.Sub(A).Norm()
+		spline = append(spline, unit.ScalarMul(length))
 	case SPLINE_PERFECT:
 	case SPLINE_BEZIER:
 	case SPLINE_CATMULL:

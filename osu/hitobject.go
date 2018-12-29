@@ -118,6 +118,7 @@ func ParseSlider(params commonParameters, parts []string) (obj ObjSlider, err er
 	}
 
 	kind, ctlPoints, err := ParseControlPoints(parts[5])
+	ctlPoints = append([]IntPoint{IntPoint{params.x, params.y}}, ctlPoints...)
 	spline, err := SplineFrom(kind, ctlPoints, pixelLength)
 
 	obj = ObjSlider{
@@ -145,8 +146,20 @@ func (obj ObjSlider) GetStartTime() Timestamp {
 }
 
 func (obj ObjSlider) Serialize() (string, error) {
-	// TODO:
-	return "", errors.New("unimplemented")
+	return fmt.Sprintf("%d,%d,%d,%d,%d,%c|%s,%d,%f,%s,%s,%s",
+		obj.x,
+		obj.y,
+		obj.startTime,
+		1|(WHAT_THE_FUCK[obj.newCombo]<<2),
+		obj.additions,
+		obj.splineKind,
+		"TODO",
+		obj.repeatCount,
+		obj.pixelLength,
+		"TODO",
+		"TODO",
+		obj.extras.String(),
+	), nil
 }
 
 type ObjSpinner struct {
