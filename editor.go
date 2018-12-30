@@ -1,19 +1,14 @@
 package editor
 
 import (
-	"fmt"
-	"image/color"
 	"os"
 	"path/filepath"
 	"time"
 
 	"editor/osu"
-	"editor/ui"
 
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
-	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
+	"github.com/veandco/go-sdl2/sdl"
 	"golang.org/x/image/font/basicfont"
 )
 
@@ -28,8 +23,10 @@ type Editor struct {
 
 	seeker *Seeker
 
-	atlas  *text.Atlas
-	window *ui.Window
+	atlas *text.Atlas
+
+	window   *sdl.Window
+	renderer *sdl.Renderer
 }
 
 func NewEditor() (*Editor, error) {
@@ -37,12 +34,7 @@ func NewEditor() (*Editor, error) {
 	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
 
 	// initialize window
-	wincfg := pixelgl.WindowConfig{
-		Title:  "editor",
-		Bounds: pixel.R(0, 0, 1366, 768),
-		VSync:  true,
-	}
-	window, err := ui.NewWindow(wincfg)
+	window, renderer, err := sdl.CreateWindowAndRenderer(1366, 768, sdl.WINDOW_SHOWN)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +44,9 @@ func NewEditor() (*Editor, error) {
 		playing:   false,
 		audio:     &AudioManager{},
 
-		atlas:  atlas,
-		window: window,
+		atlas:    atlas,
+		window:   window,
+		renderer: renderer,
 	}
 
 	seekerConfig := SeekerConfig{
@@ -77,12 +70,12 @@ func (editor *Editor) update() {
 	elapsed := now.Sub(editor.lastUpdate)
 
 	// update audio position based on scroll
-	editor.timestamp += int(editor.window.MouseScroll().Y * -150.0)
+	// editor.timestamp += int(editor.window.MouseScroll().Y * -150.0)
 
 	// change play/pause
-	if editor.window.JustReleased(pixelgl.KeySpace) {
-		editor.playing = !editor.playing
-	}
+	// if editor.window.JustReleased(pixelgl.KeySpace) {
+	// 	editor.playing = !editor.playing
+	// }
 
 	// if playing
 	if editor.playing {
@@ -98,39 +91,38 @@ func (editor *Editor) draw() {
 	}
 
 	length := editor.audio.GetSongLength()
-	percent := float64(editor.timestamp) * 100.0 / float64(length)
+	_ = float64(editor.timestamp) * 100.0 / float64(length)
 
-	ctx := ui.ContextFrom(editor.window)
-	im := imdraw.New(nil)
+	// im := imdraw.New(nil)
 
-	editor.seeker.Draw(ctx)
+	// editor.seeker.Draw(ctx)
 
-	// playfield
-	im.Color = pixel.RGB(0.1, 0.1, 0.1)
-	im.Push(pixel.V(155, 48))
-	im.Push(pixel.V(1211, 642))
-	im.Rectangle(0)
+	// // playfield
+	// im.Color = pixel.RGB(0.1, 0.1, 0.1)
+	// im.Push(pixel.V(155, 48))
+	// im.Push(pixel.V(1211, 642))
+	// im.Rectangle(0)
 
-	// timeline
-	im.Color = pixel.RGB(0.2, 0.2, 0.2)
-	im.Push(pixel.V(0, 642))
-	im.Push(pixel.V(1366, 720))
-	im.Rectangle(0)
+	// // timeline
+	// im.Color = pixel.RGB(0.2, 0.2, 0.2)
+	// im.Push(pixel.V(0, 642))
+	// im.Push(pixel.V(1366, 720))
+	// im.Rectangle(0)
 
-	// toolbar
-	im.Color = pixel.RGB(0.3, 0.3, 0.3)
-	im.Push(pixel.V(0, 720))
-	im.Push(pixel.V(1366, 768))
-	im.Rectangle(0)
+	// // toolbar
+	// im.Color = pixel.RGB(0.3, 0.3, 0.3)
+	// im.Push(pixel.V(0, 720))
+	// im.Push(pixel.V(1366, 768))
+	// im.Rectangle(0)
 
-	im.Draw(editor.window)
-	ctx.Finish()
+	// im.Draw(editor.window)
+	// ctx.Finish()
 
-	// draw audio timestamp
-	formatted := FormatTimestamp(editor.timestamp)
-	timestamp := text.New(pixel.V(20, 20), editor.atlas)
-	fmt.Fprintf(timestamp, "%s (%.02f%%)", formatted, percent)
-	timestamp.Draw(editor.window, pixel.IM)
+	// // draw audio timestamp
+	// formatted := FormatTimestamp(editor.timestamp)
+	// timestamp := text.New(pixel.V(20, 20), editor.atlas)
+	// fmt.Fprintf(timestamp, "%s (%.02f%%)", formatted, percent)
+	// timestamp.Draw(editor.window, pixel.IM)
 }
 
 func (editor *Editor) Open(filename string) error {
@@ -162,12 +154,14 @@ func (editor *Editor) Start() {
 	editor.lastUpdate = time.Now()
 
 	// the main game loop
-	for !editor.window.Closed() {
-		editor.window.Clear(color.Black)
-
+	for {
 		editor.update()
 		editor.draw()
 
-		editor.window.Update()
+		editor.window.UpdateSurface()
+
+		// TODO: vsync
+		// this is ~50fps max
+		time.Sleep(time.Millisecond * 20)
 	}
 }

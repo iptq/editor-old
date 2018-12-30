@@ -14,6 +14,8 @@ const (
 	SPLINE_PERFECT = 'P'
 	SPLINE_BEZIER  = 'B'
 	SPLINE_CATMULL = 'C'
+
+	CURVE_THRESHOLD = 1.0
 )
 
 func ParseControlPoints(line string) (kind SplineKind, points []IntPoint, err error) {
