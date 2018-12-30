@@ -7,13 +7,13 @@ import (
 
 	"editor/osu"
 
-	"github.com/faiface/pixel/text"
 	"github.com/veandco/go-sdl2/sdl"
-	"golang.org/x/image/font/basicfont"
 )
 
 // Editor contains the state of the editor.
 type Editor struct {
+	quit bool
+
 	// current audio timestamp in milliseconds
 	timestamp  int
 	playing    bool
@@ -23,16 +23,11 @@ type Editor struct {
 
 	seeker *Seeker
 
-	atlas *text.Atlas
-
 	window   *sdl.Window
 	renderer *sdl.Renderer
 }
 
 func NewEditor() (*Editor, error) {
-	// text atlas
-	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
-
 	// initialize window
 	window, renderer, err := sdl.CreateWindowAndRenderer(1366, 768, sdl.WINDOW_SHOWN)
 	if err != nil {
@@ -40,11 +35,12 @@ func NewEditor() (*Editor, error) {
 	}
 
 	editor := &Editor{
+		quit: false,
+
 		timestamp: 0.0,
 		playing:   false,
 		audio:     &AudioManager{},
 
-		atlas:    atlas,
 		window:   window,
 		renderer: renderer,
 	}
@@ -69,13 +65,17 @@ func (editor *Editor) update() {
 	now := time.Now()
 	elapsed := now.Sub(editor.lastUpdate)
 
-	// update audio position based on scroll
-	// editor.timestamp += int(editor.window.MouseScroll().Y * -150.0)
-
-	// change play/pause
-	// if editor.window.JustReleased(pixelgl.KeySpace) {
-	// 	editor.playing = !editor.playing
-	// }
+	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+		switch kind := event.(type) {
+		case *sdl.QuitEvent:
+			editor.quit = true
+		case *sdl.KeyboardEvent:
+			switch kind.Keysym.Sym {
+			case sdl.K_SPACE:
+				editor.playing = !editor.playing
+			}
+		}
+	}
 
 	// if playing
 	if editor.playing {
@@ -154,7 +154,7 @@ func (editor *Editor) Start() {
 	editor.lastUpdate = time.Now()
 
 	// the main game loop
-	for {
+	for !editor.quit {
 		editor.update()
 		editor.draw()
 
